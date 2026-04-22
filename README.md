@@ -1,121 +1,135 @@
-clear; close all; clc;
+1. Introduction
 
-num_bits = 1e6;                     % Total source bits
+A digital communication system sends data (0s and 1s) from a transmitter to a receiver.
+During transmission, signals are affected by noise and fading, which create errors.
 
-code_rate = 1/2;                    % Rate 1/2 convolutional code
+To reduce errors, we use:
 
-k = 2;                              % Bits per symbol (4QAM)
+4QAM modulation
+Convolutional coding
+Interleaving
+2. Important Concepts with Formulas
+1. Received Signal Model
 
-% SNR range for BER analysis
+The received signal is:
 
-EbNo_dB = 0:2:14;                   % Energy per bit to noise PSD (dB)
+r=h⋅s+n
 
-SNR_dB = EbNo_dB + 10*log10(k * code_rate); % Symbol SNR for coded system
+Where:
 
-% Interleaver depth (must divide total coded bits)
+r = received signal
+s = transmitted signal
+h = channel effect (fading)
+n = noise
+2. AWGN Noise
+n∼CN(0,σ
+2
+)
+Noise is random with variance σ
+2
+3. Rayleigh Fading
+h∼CN(0,1)
+Signal strength changes randomly
+4. Zero-Forcing Equalizer
+s
+^
+=
+h
+r
+	​
 
-interleaver_depth = 200;
+Removes channel distortion
+5. 4QAM Mapping
 
-%% 2. Pre-allocate BER arrays
+Symbols:
 
-ber_uncoded_theory = zeros(size(EbNo_dB));
+2
+	​
 
-ber_coded_sim = zeros(size(EbNo_dB));
+1
+	​
 
-ber_fading_sim = zeros(size(EbNo_dB));
-
-
-%% 3. Main Simulation Loop over SNR
-
-for idx = 1:length(EbNo_dB)
-
-    fprintf('Simulating Eb/No = %.1f dB...\n', EbNo_dB(idx));
-    
-    
-    % --- Transmitter ---
-    
-    source_bits = bit_generator(num_bits);
-    
-    coded_bits = encoder(source_bits);
-    
-    interleaved_bits = interleaver(coded_bits, interleaver_depth);
-    
-    tx_symbols = mapper(interleaved_bits);
-    
-    % --- AWGN Channel (Coded) ---
-    
-    rx_symbols_awgn = awgn_channel(tx_symbols, SNR_dB(idx));
-    
-    % --- Rayleigh Fading Channel ---
-    
-    [rx_symbols_fading, h] = rayleigh_channel(tx_symbols, SNR_dB(idx));
-    
-    rx_symbols_eq = equalizer(rx_symbols_fading, h);
-    
-    % --- Receiver for AWGN ---
-    
-    demod_bits_awgn = demodulator(rx_symbols_awgn);
-    
-    deinterleaved_awgn = deinterleaver(demod_bits_awgn, interleaver_depth);
-    
-    decoded_bits_awgn = decoder(deinterleaved_awgn);
-    
-    % --- Receiver for Rayleigh Fading ---
-    
-    demod_bits_fading = demodulator(rx_symbols_eq);
-    
-    deinterleaved_fading = deinterleaver(demod_bits_fading, interleaver_depth);
-    
-    decoded_bits_fading = decoder(deinterleaved_fading);
-    
-    % --- BER Calculation ---
-    [~, ber_coded_sim(idx)] = biterr(source_bits, decoded_bits_awgn);
-    
-    [~, ber_fading_sim(idx)] = biterr(source_bits, decoded_bits_fading);
-    
-    % Theoretical uncoded BER (for reference)
-    
-    EbNo_lin = 10^(EbNo_dB(idx)/10);
-    
-    ber_uncoded_theory(idx) = 0.5 * erfc(sqrt(EbNo_lin));
-    
-    % --- Plot constellation at mid SNR (8 dB) ---
-    
-    if EbNo_dB(idx) == 8
-    
-        constellation(rx_symbols_awgn, EbNo_dB(idx));
-        
-    end
-    
-end
-
-%% 4. Plot BER Performance
-
-ber_plots(EbNo_dB, ber_uncoded_theory, ber_coded_sim, ber_fading_sim);
-
-%% 5. Display Summary
-
-fprintf('\n=== Simulation Complete ===\n');
-
-fprintf('Total bits transmitted: %d\n', num_bits);
-
-fprintf('Modulation: 4QAM (QPSK) with Gray coding\n');
-
-fprintf('FEC: Rate 1/2 Convolutional code (Constraint length 3)\n');
-
-fprintf('Coding Gain at BER=1e-4: ~2.5 dB\n');
-
-% Display final BER table
-
-fprintf('\nBER Results:\n');
-
-fprintf('Eb/No (dB) | Uncoded Theory | Coded AWGN  | Coded Rayleigh\n');
-
-for idx = 1:length(EbNo_dB)
-    fprintf('%8.2f   | %.3e     | %.3e    | %.3e\n', ...
-    
-            EbNo_dB(idx), ber_uncoded_theory(idx), ...
-            
-            ber_coded_sim(idx), ber_fading_sim(idx));
-            
-end
+(±1±j)
+Each symbol carries 2 bits
+3. System Working
+Transmitter
+Generate bits
+Apply encoding
+Interleave bits
+Map to 4QAM symbols
+Channel
+Adds noise and fading
+Receiver
+Equalize signal
+Demodulate
+Deinterleave
+Decode
+4. Flowchart
+        TRANSMITTER
+   ----------------------
+   Random Bits
+        ↓
+   Convolutional Encoder
+        ↓
+     Interleaver
+        ↓
+     4QAM Mapper
+        ↓
+   ----------------------
+          CHANNEL
+   ----------------------
+     r = h·s + n
+        ↓
+   ----------------------
+        RECEIVER
+   ----------------------
+     Equalizer (r/h)
+        ↓
+    Demodulator
+        ↓
+   Deinterleaver
+        ↓
+   Viterbi Decoder
+        ↓
+     Output Bits
+5. Important MATLAB Code Lines
+1. Bit Generation
+bits = randi([0 1], 1, 1e6);
+2. Convolutional Encoding
+trellis = poly2trellis(3, [5 7]);
+encoded_bits = convenc(bits, trellis);
+3. Interleaving
+interleaved = reshape(encoded_bits, [], 4).';
+interleaved = interleaved(:);
+4. 4QAM Mapping
+symbols = (2*bits(1:2:end)-1) + 1j*(2*bits(2:2:end)-1);
+symbols = symbols / sqrt(2);
+5. AWGN Channel
+noise = sqrt(sigma2)*(randn + 1j*randn);
+r = s + noise;
+6. Rayleigh Channel
+h = sqrt(0.5)*(randn + 1j*randn);
+r = h.*s + noise;
+7. Equalization
+s_hat = r ./ h;
+8. Viterbi Decoding
+decoded = vitdec(received_bits, trellis, 34, 'trunc', 'hard');
+6. Result Plot Understanding
+1. BER vs Eb/No Plot
+X-axis → Eb/No (Signal to Noise Ratio)
+Y-axis → BER (Error Rate)
+Understanding:
+As Eb/No increases → noise decreases → BER decreases
+Coded system curve is lower than uncoded → better performance
+Gap between curves = coding gain
+2. Constellation Plot
+Shows received symbols in complex plane
+Understanding:
+Ideal points = 4 fixed positions
+Noise spreads points around them
+Tight clusters → good performance
+Scattered points → more errors
+7. Key Results 
+Coding reduces errors significantly
+Interleaving helps in fading conditions
+System works well even at moderate SNR
