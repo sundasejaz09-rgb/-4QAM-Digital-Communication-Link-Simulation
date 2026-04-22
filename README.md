@@ -44,19 +44,26 @@ Decode
    
         TRANSMITTER
    ----------------------
+   
    Random Bits
+   
         ↓
    Convolutional Encoder
+   
         ↓
      Interleaver
+   
         ↓
      4QAM Mapper
+   
         ↓
    ----------------------
           CHANNEL
    ----------------------
+   
      r = h·s + n
         ↓
+   
    ----------------------
         RECEIVER
    ----------------------
