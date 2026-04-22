@@ -1,2 +1,13 @@
-# -4QAM-Digital-Communication-Link-Simulation
-design, implementation, and validation of an end-to-end 4QAM (QPSK) digital communication link in MATLAB. The simulation incorporates forward error correction (convolutional coding), interleaving, and channel modeling (AWGN and Rayleigh fading) to demonstrate robust algorithm development for real-world communication systems.
+function interleaved = interleaver(coded_bits, depth)
+
+num_bits = length(coded_bits);
+
+cols = num_bits / depth;
+
+matrix = reshape(coded_bits, depth, cols);
+
+interleaved = matrix';
+
+interleaved = interleaved(:);
+
+end
