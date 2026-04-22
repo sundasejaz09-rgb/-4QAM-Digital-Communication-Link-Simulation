@@ -38,4 +38,5 @@ for i = 1:num_symbols
             bits(2*i-1 : 2*i) = [1; 0];
     end
 end
+
 end
